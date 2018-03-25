@@ -11,7 +11,6 @@ public class Item {
 
     private String name;
     private String path;
-    private String srcMetaFileName;
     private Map<String,String> attributes;
     private List<String> tags;
 
@@ -26,10 +25,6 @@ public class Item {
 
     public String getPath() {
         return path;
-    }
-
-    public String getSrcMetaFileName() {
-        return srcMetaFileName;
     }
 
     public Map<String, String> getAttributes() {
