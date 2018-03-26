@@ -19,7 +19,8 @@ public class TagFS {
             ia.exportItemsCsv(items, System.out);
         }
         catch (Exception e) {
-            System.out.printf("Error in TagFS app: %s\n", e);
+            System.err.printf("Error in TagFS app: %s\n", e);
+            e.printStackTrace(System.err);
         }
     }
 
