@@ -32,12 +32,10 @@ public class KotasNameParser
                 if (isNumber(year)) {
                     album = itemName.substring((index + 1)).trim();
                 } else {
-                    // TODO: implement fall-through to the second type
-                    album = itemName.trim();
                     year = null;
                 }
             }
-            else {
+            if (album == null) {
                 index = itemName.indexOf('(');
                 if (index > 0) {
                     int endIndex = itemName.indexOf(')', index + 1);
@@ -46,21 +44,19 @@ public class KotasNameParser
                         if (isNumber(year)) {
                             album = itemName.substring(0, index).trim();
                         } else {
-                            album = itemName.trim();
                             year = null;
                         }
                     }
                 }
-                if (album == null) {
-                    album = itemName.trim();
-                }
+            }
+            if (album == null) {
+                album = itemName.trim();
             }
             attrs.put("Artist", artist);
             attrs.put("Album", album);
-            // TODO: uncomment if once reading att list from all items will be implemented
-//            if (year != null) {
+            if (year != null) {
                 attrs.put("Year", year);
-//            }
+            }
         }
         return attrs;
     }

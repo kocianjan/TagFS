@@ -8,9 +8,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class ItemAccessor {
@@ -29,6 +27,7 @@ public class ItemAccessor {
         Repository rep = new Repository();
         rep.setRootDir(rootDir);
         rep.setNameParser(new KotasNameParser());
+        rep.addAdditionalMetafile("_info.txt", new KotasInfoParser());
         return rep;
     }
 
@@ -45,13 +44,36 @@ public class ItemAccessor {
     private Item readItem(File itemDir, Repository rep) {
         Item item = new Item(itemDir.getAbsolutePath());
         ItemNameParser nameParser = rep.getNameParser();
+        // TODO: temporary, remove
+        updateItemFromDirContent(item, itemDir);
         if (nameParser != null) {
-            item.addAttributes(nameParser.parseAttributes(item.getName()));
+//            item.addAttributes(nameParser.parseAttributes(item.getName()));
         }
         for (String mfName: rep.getAdditionalMetafiles().keySet()) {
-            updateItemFromMetafile(new File(itemDir, mfName), rep.getAdditionalMetafiles().get(mfName), item);
+//            updateItemFromMetafile(new File(itemDir, mfName), rep.getAdditionalMetafiles().get(mfName), item);
         }
 
+        return item;
+    }
+
+    private String[] ignores = new String[]{".mp3", ".m3u", ".flac", ".jpg", ".m4a", "_info.txt"};
+    private Item updateItemFromDirContent(Item item, File itemDir) {
+        String[] fileNames = itemDir.list();
+        StringBuffer buf = new StringBuffer();
+        for (String filename: fileNames) {
+            boolean ignore = false;
+            String lcFilename = filename.toLowerCase();
+            for (String suffix: ignores) {
+                if (lcFilename.endsWith(suffix)) {
+                    ignore = true;
+                    break;
+                }
+            }
+            if (!ignore) {
+                buf.append(filename).append("|");
+            }
+        }
+        item.addAttribute("metafiles", buf.toString());
         return item;
     }
 
@@ -99,12 +121,19 @@ public class ItemAccessor {
             return;
         }
         CSVPrinter printer = new CSVPrinter(appendable, CSVFormat.DEFAULT);
-        List<String> attributeNames = new ArrayList<String>();
-        attributeNames.addAll(items.get(0).getAttributes().keySet());
+        List<String> attributeNames = getAttributeNames(items);
         writeHeader(attributeNames, printer);
         for (Item item: items) {
             writeItem(item, attributeNames, printer);
         }
+    }
+
+    private List<String> getAttributeNames(List<Item> items) {
+        Set<String> attributes = new HashSet<String>();
+        for (Item item: items) {
+            attributes.addAll(item.getAttributes().keySet());
+        }
+        return new ArrayList<String>(attributes);
     }
 
     private void writeHeader(List<String> attributeNames, CSVPrinter printer)
@@ -131,7 +160,7 @@ public class ItemAccessor {
         printer.println();
     }
 
-    private String serializeCollection(Collection<String> items, String separator) {
+    private String serializeCollection(Collection<?extends Object> items, String separator) {
         StringBuffer buf = new StringBuffer();
         for (Object item: items) {
             buf.append(item).append(separator);

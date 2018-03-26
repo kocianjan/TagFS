@@ -45,6 +45,10 @@ public class Item {
         getAttributes().putAll(items);
     }
 
+    public void addAttribute(String name, String value) {
+        getAttributes().put(name, value);
+    }
+
     public void addTags(List<String> items) {
         getTags().addAll(items);
     }
