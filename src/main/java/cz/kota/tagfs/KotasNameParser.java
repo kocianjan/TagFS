@@ -17,20 +17,22 @@ public class KotasNameParser
      * @return
      */
     public Map<String,String> parseAttributes(String itemName) {
-        HashMap<String,String> attrs = new HashMap<String, String>();
-        int index = itemName.indexOf('-');
+        HashMap<String,String> attrs = new HashMap<>();
+        String separator = " - ";
+        int sepLen = separator.length();
+        int index = itemName.indexOf(separator);
         if (index < 0) {
-            attrs.put("Album", itemName.trim());
+            attrs.put(KotasNames.ATTR_ALBUM, itemName.trim());
         }
         else {
             String artist, album = null, year = null;
             artist = itemName.substring(0, index).trim();
-            itemName = itemName.substring(index + 1).trim();
-            index = itemName.indexOf('-');
+            itemName = itemName.substring(index + sepLen).trim();
+            index = itemName.indexOf(separator);
             if (index > 0) {
                 year = itemName.substring(0, index).trim();
                 if (isNumber(year)) {
-                    album = itemName.substring((index + 1)).trim();
+                    album = itemName.substring((index + sepLen)).trim();
                 } else {
                     year = null;
                 }
@@ -52,10 +54,10 @@ public class KotasNameParser
             if (album == null) {
                 album = itemName.trim();
             }
-            attrs.put("Artist", artist);
-            attrs.put("Album", album);
+            attrs.put(KotasNames.ATTR_ARTIST, artist);
+            attrs.put(KotasNames.ATTR_ALBUM, album);
             if (year != null) {
-                attrs.put("Year", year);
+                attrs.put(KotasNames.ATTR_YEAR, year);
             }
         }
         return attrs;
@@ -73,9 +75,9 @@ public class KotasNameParser
 
     public String generateName(Map<String,String> attributes) {
         String def = "";
-        String artist = attributes.getOrDefault("Artist", def);
-        String year = attributes.getOrDefault("Year", def);
-        String album = attributes.getOrDefault("Album", def);
+        String artist = attributes.getOrDefault(KotasNames.ATTR_ARTIST, def);
+        String year = attributes.getOrDefault(KotasNames.ATTR_YEAR, def);
+        String album = attributes.getOrDefault(KotasNames.ATTR_ALBUM, def);
         return String.format("%s - %s - %s", artist, year, album);
     }
 

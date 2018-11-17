@@ -1,6 +1,8 @@
 package cz.kota.tagfs;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 public class Repository {
@@ -8,6 +10,7 @@ public class Repository {
     private String metafileName;
     private MetadataAccessor metadataAccessor;
     private Map<String, MetadataAccessor> additionalMetafiles;
+    private Collection<String> ignoreDirNames;
     private ItemNameParser nameParser;
 
     public String getRootDir() {
@@ -24,7 +27,7 @@ public class Repository {
 
     public Map<String, MetadataAccessor> getAdditionalMetafiles() {
         if (additionalMetafiles == null) {
-            additionalMetafiles = new HashMap<String, MetadataAccessor>();
+            additionalMetafiles = new HashMap<>();
         }
         return additionalMetafiles;
     }
@@ -50,4 +53,18 @@ public class Repository {
         this.nameParser = nameParser;
     }
 
+    public Collection<String> getIgnoreDirNames() {
+        if (ignoreDirNames == null) {
+            ignoreDirNames = new HashSet<>();
+        }
+        return ignoreDirNames;
+    }
+
+    public void setIgnoreDirNames(Collection<String> ignoreDirNames) {
+        this.ignoreDirNames = ignoreDirNames;
+    }
+
+    public void addIgnoreDirName(String name) {
+        getIgnoreDirNames().add(name);
+    }
 }

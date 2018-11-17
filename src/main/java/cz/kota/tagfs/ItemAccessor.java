@@ -28,12 +28,21 @@ public class ItemAccessor {
         rep.setRootDir(rootDir);
         rep.setNameParser(new KotasNameParser());
         rep.addAdditionalMetafile("_info.txt", new KotasInfoParser());
+        rep.addAdditionalMetafile("_grabbed.txt", new StaticMetadataAccessor(KotasNames.ATTR_SOURCE, "grabbed"));
+        rep.addIgnoreDirName("!INBOX");
+        rep.addIgnoreDirName("__mix");
         return rep;
     }
 
     public List<Item> readRepository(Repository rep) {
-        Collection<File> itemDirs = listItemDirs(rep.getRootDir());
-        ArrayList<Item> items = new ArrayList<Item>();
+        ignores = new HashSet<>();
+        ignores.addAll(Arrays.asList(ignoresArr));
+        ignores.add(rep.getMetafileName());
+        ignores.addAll(rep.getAdditionalMetafiles().keySet());
+        ignores.remove(null);
+
+        Collection<File> itemDirs = listItemDirs(rep.getRootDir(), rep.getIgnoreDirNames());
+        ArrayList<Item> items = new ArrayList<>();
         for (File itemDir: itemDirs) {
             Item item = readItem(itemDir, rep);
             items.add(item);
@@ -47,19 +56,23 @@ public class ItemAccessor {
         // TODO: temporary, remove
         updateItemFromDirContent(item, itemDir);
         if (nameParser != null) {
-//            item.addAttributes(nameParser.parseAttributes(item.getName()));
+            item.addAttributes(nameParser.parseAttributes(item.getName()));
         }
         for (String mfName: rep.getAdditionalMetafiles().keySet()) {
-//            updateItemFromMetafile(new File(itemDir, mfName), rep.getAdditionalMetafiles().get(mfName), item);
+            updateItemFromMetafile(new File(itemDir, mfName), rep.getAdditionalMetafiles().get(mfName), item);
         }
 
         return item;
     }
 
-    private String[] ignores = new String[]{".mp3", ".m3u", ".flac", ".jpg", ".m4a", "_info.txt"};
+    private String[] ignoresArr = new String[] {
+            ".mp3", ".m3u", ".flac", ".jpg", ".jpeg", ".m4a", ".sfv", ".htm", ".html", ".md5", ".nfo",
+            "lyrics.txt", "thumbs.db", "desktop.ini", "tracklist.txt", "texty.txt", "seznam.txt"
+    };
+    private HashSet<String> ignores = new HashSet<>();
     private Item updateItemFromDirContent(Item item, File itemDir) {
         String[] fileNames = itemDir.list();
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
         for (String filename: fileNames) {
             boolean ignore = false;
             String lcFilename = filename.toLowerCase();
@@ -89,14 +102,17 @@ public class ItemAccessor {
         }
     }
 
-    private Collection<File> listItemDirs(String rootPath) {
+    private Collection<File> listItemDirs(String rootPath, Collection<String> ignoreDirNames) {
         File rootDir = new File(rootPath);
-        ArrayList<File> itemDirs = new ArrayList<File>();
-        getLeafDirs(rootDir, itemDirs);
+        ArrayList<File> itemDirs = new ArrayList<>();
+        getLeafDirs(rootDir, itemDirs, ignoreDirNames);
         return itemDirs;
     }
 
-    private void getLeafDirs(File dir, ArrayList<File> leafs) {
+    private void getLeafDirs(File dir, ArrayList<File> leafs, Collection<String> ignoreDirNames) {
+        if (ignoreDirNames.contains(dir.getName())) {
+            return;
+        }
         File[] subdirs = dir.listFiles(new FileFilter() {
             @Override
             public boolean accept(File pathname) {
@@ -108,7 +124,7 @@ public class ItemAccessor {
         }
         else {
             for (File subdir: subdirs) {
-                getLeafDirs(subdir, leafs);
+                getLeafDirs(subdir, leafs, ignoreDirNames);
             }
         }
     }
@@ -116,7 +132,7 @@ public class ItemAccessor {
     public void exportItemsCsv(List<Item> items, Appendable appendable)
         throws IOException
     {
-        ArrayList<String> result = new ArrayList<String>();
+        ArrayList<String> result = new ArrayList<>();
         if (items.isEmpty()) {
             return;
         }
@@ -129,11 +145,11 @@ public class ItemAccessor {
     }
 
     private List<String> getAttributeNames(List<Item> items) {
-        Set<String> attributes = new HashSet<String>();
+        Set<String> attributes = new HashSet<>();
         for (Item item: items) {
             attributes.addAll(item.getAttributes().keySet());
         }
-        return new ArrayList<String>(attributes);
+        return new ArrayList<>(attributes);
     }
 
     private void writeHeader(List<String> attributeNames, CSVPrinter printer)
@@ -160,8 +176,8 @@ public class ItemAccessor {
         printer.println();
     }
 
-    private String serializeCollection(Collection<?extends Object> items, String separator) {
-        StringBuffer buf = new StringBuffer();
+    private String serializeCollection(Collection<?> items, String separator) {
+        StringBuilder buf = new StringBuilder();
         for (Object item: items) {
             buf.append(item).append(separator);
         }
